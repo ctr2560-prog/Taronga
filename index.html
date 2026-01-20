@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taronga Zoo - Animal Geocache Hunt</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    const ZooSoundsApp = () => {
+      const [currentScreen, setCurrentScreen] = useState('home');
+      const [userLocation, setUserLocation] = useState(null);
+      const [locationEnabled, setLocationEnabled] = useState(false);
+      const [foundAnimals, setFoundAnimals] = useState(new Set());
+      const [currentAnimal, setCurrentAnimal] = useState(null);
+      const [quizAnswers, setQuizAnswers] = useState({});
+      const [observation, setObservation] = useState('');
+      const [totalPoints, setTotalPoints] = useState(0);
+      const [currentAudio, setCurrentAudio] = useState(null);
+      const [badges, setBadges] = useState([]);
+
+      const animals = [
+        { 
+          id: 'chimpanzee',
+          name: 'Chimpanzee',
+          scientificName: 'Pan troglodytes',
+          image: 'images/chimpanzee.jpg',
+          audioUrl: 'sounds/chimpanzee.mp3',
+          latitude: -33.8428,
+          longitude: 151.2401,
+          radius: 30,
+          emoji: '🐵',
+          questions: [
+            {
+              q: 'What do chimpanzees use tools for?',
+              options: ['Cracking nuts and fishing for termites', 'Building houses', 'Playing music', 'Swimming'],
+              correct: 0
+            },
+            {
+              q: 'How similar is chimpanzee DNA to human DNA?',
+              options: ['50%', '75%', '98-99%', '100%'],
+              correct: 2
+            },
+            {
+              q: 'What is a group of chimpanzees called?',
+              options: ['A pack', 'A community', 'A herd', 'A school'],
+              correct: 1
+            }
+          ],
+          observationPrompt: 'Observe the chimpanzees for 2 minutes. What behaviors did you see? (e.g., grooming, playing, eating, vocalizing, tool use)',
+          pointValue: 50
+        },
+        { 
+          id: 'gorilla',
+          name: 'Western Lowland Gorilla',
+          scientificName: 'Gorilla gorilla gorilla',
+          image: 'images/gorilla.jpg',
+          audioUrl: 'sounds/gorilla.mp3',
+          latitude: -33.8443,
+          longitude: 151.2413,
+          radius: 30,
+          emoji: '🦍',
+          questions: [
+            {
+              q: 'What is the alpha male gorilla called?',
+              options: ['King Kong', 'Silverback', 'Alpha', 'Chief'],
+              correct: 1
+            },
+            {
+              q: 'What percentage of a gorilla\'s diet is plant-based?',
+              options: ['50%', '75%', '95%+', '100%'],
+              correct: 2
+            },
+            {
+              q: 'How do gorillas communicate?',
+              options: ['Only through sounds', 'Vocalizations, gestures, and body language', 'Telepathy', 'Writing'],
+              correct: 1
+            }
+          ],
+          observationPrompt: 'Watch the gorillas carefully. Describe their social interactions and family structure. What behaviors show their intelligence?',
+          pointValue: 50
+        },
+        { 
+          id: 'lion',
+          name: 'African Lion',
+          scientificName: 'Panthera leo',
+          image: 'images/lion.jpg',
+          audioUrl: 'sounds/lion.mp3',
+          latitude: -33.8427,
+          longitude: 151.2393,
+          radius: 30,
+          emoji: '🦁',
+          questions: [
+            {
+              q: 'How far can a lion\'s roar be heard?',
+              options: ['500 meters', '2 kilometers', '8 kilometers', '20 kilometers'],
+              correct: 2
+            },
+            {
+              q: 'Who does most of the hunting in a lion pride?',
+              options: ['Male lions', 'Female lions', 'Cubs', 'All equally'],
+              correct: 1
+            },
+            {
+              q: 'How many hours a day do lions typically rest?',
+              options: ['5 hours', '10 hours', '16-20 hours', '24 hours'],
+              correct: 2
+            }
+          ],
+          observationPrompt: 'Watch the lions. Describe their behavior and social interactions. Are they resting, active, or interacting with each other?',
+          pointValue: 50
+        },
+        { 
+          id: 'giraffe',
+          name: 'Giraffe',
+          scientificName: 'Giraffa camelopardalis',
+          image: 'images/giraffe.jpg',
+          audioUrl: 'sounds/giraffe.mp3',
+          latitude: -33.8431,
+          longitude: 151.2404,
+          radius: 30,
+          emoji: '🦒',
+          questions: [
+            {
+              q: 'How do giraffes sleep?',
+              options: ['Standing up for short periods', 'Lying down for 8 hours', 'They never sleep', 'Hanging from trees'],
+              correct: 0
+            },
+            {
+              q: 'What is unique about a giraffe\'s tongue?',
+              options: ['It\'s blue-black and up to 50cm long', 'It glows in the dark', 'It\'s forked like a snake', 'It\'s covered in scales'],
+              correct: 0
+            },
+            {
+              q: 'How do giraffes drink water?',
+              options: ['Using their long tongue', 'Through their nose', 'By spreading their front legs apart', 'They don\'t drink water'],
+              correct: 2
+            }
+          ],
+          observationPrompt: 'Observe how the giraffes move and eat. What feeding behaviors do you notice?',
+          pointValue: 50
+        },
+        { 
+          id: 'koala',
+          name: 'Koala',
+          scientificName: 'Phascolarctos cinereus',
+          image: 'images/koala.jpg',
+          audioUrl: 'sounds/koala.mp3',
+          latitude: -33.8426,
+          longitude: 151.2414,
+          radius: 30,
+          emoji: '🐨',
+          questions: [
+            {
+              q: 'What is the scientific name of the koala?',
+              options: ['Vombatus ursinus', 'Phascolarctos cinereus', 'Macropus giganteus', 'Tachyglossus aculeatus'],
+              correct: 1
+            },
+            {
+              q: 'Which adaptation helps koalas climb and grip tree trunks effectively?',
+              options: ['Sharp claws and opposable toes', 'Long tails for balance', 'Webbed feet for swimming', 'Flexible spines for jumping'],
+              correct: 0
+            },
+            {
+              q: 'Why do koalas spend up to 18–20 hours a day sleeping?',
+              options: ['They are nocturnal predators', 'Their fur causes them to overheat', 'They are avoiding competition with other animals', 'Their diet is low in energy, requiring energy conservation'],
+              correct: 3
+            }
+          ],
+          observationPrompt: 'Watch the koala carefully. What position is it in? Is it active or resting? Describe what you see.',
+          pointValue: 50
+        },
+        { 
+          id: 'tiger',
+          name: 'Sumatran Tiger',
+          scientificName: 'Panthera tigris sumatrae',
+          image: 'images/tiger.jpg',
+          audioUrl: 'sounds/tiger.mp3',
+          latitude: -33.8433,
+          longitude: 151.2394,
+          radius: 30,
+          emoji: '🐯',
+          questions: [
+            {
+              q: 'How many Sumatran tigers are left in the wild?',
+              options: ['Over 10,000', '5,000-7,000', 'Fewer than 400', 'They are extinct'],
+              correct: 2
+            },
+            {
+              q: 'What makes Sumatran tigers different from other tigers?',
+              options: ['They are the smallest tiger subspecies', 'They are the largest', 'They can fly', 'They are herbivores'],
+              correct: 0
+            },
+            {
+              q: 'Why are Sumatran tigers endangered?',
+              options: ['Climate change only', 'Habitat loss and poaching', 'Disease', 'Natural predators'],
+              correct: 1
+            }
+          ],
+          observationPrompt: 'Watch the tiger\'s behavior. Describe how it moves, where it rests, and any territorial behaviors.',
+          pointValue: 50
+        }
+      ];
+
+      const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371e3;
+        const φ1 = lat1 * Math.PI/180;
+        const φ2 = lat2 * Math.PI/180;
+        const Δφ = (lat2-lat1) * Math.PI/180;
+        const Δλ = (lon2-lon1) * Math.PI/180;
+
+        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+        return R * c;
+      };
+
+      const enableLocation = () => {
+        if ('geolocation' in navigator) {
+          navigator.geolocation.watchPosition(
+            (position) => {
+              setUserLocation({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy
+              });
+              setLocationEnabled(true);
+              setCurrentScreen('map');
+            },
+            (error) => {
+              alert('Unable to get location. Please enable location services.');
+            },
+            { enableHighAccuracy: true, maximumAge: 5000 }
+          );
+        }
+      };
+
+      const checkAnimalProximity = (animal) => {
+        if (!userLocation) return { nearby: false, distance: null };
+        
+        const distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          animal.latitude,
+          animal.longitude
+        );
+        
+        return {
+          nearby: distance <= animal.radius,
+          distance: Math.round(distance)
+        };
+      };
+
+      const discoverAnimal = (animal) => {
+        if (foundAnimals.has(animal.id)) {
+          alert('You\'ve already found this animal! Try finding another one.');
+          return;
+        }
+
+        const { nearby } = checkAnimalProximity(animal);
+        if (!nearby) {
+          alert('You\'re not close enough to this animal yet! Get within ' + animal.radius + 'm.');
+          return;
+        }
+
+        setCurrentAnimal(animal);
+        setQuizAnswers({});
+        setObservation('');
+        setCurrentScreen('animal');
+        
+        const audio = new Audio(animal.audioUrl);
+        setCurrentAudio(audio);
+        audio.play().catch(err => console.error('Audio error:', err));
+      };
+
+      const handleQuizAnswer = (questionIndex, answerIndex) => {
+        setQuizAnswers({
+          ...quizAnswers,
+          [questionIndex]: answerIndex
+        });
+      };
+
+      const submitObservation = () => {
+        const wordCount = observation.trim().split(/\s+/).length;
+        
+        if (wordCount < 20) {
+          alert('Your observation needs at least 20 words. You have ' + wordCount + ' words. Please add more detail!');
+          return;
+        }
+
+        let correctCount = 0;
+        currentAnimal.questions.forEach((q, i) => {
+          if (quizAnswers[i] === q.correct) correctCount++;
+        });
+
+        const quizPoints = correctCount * 10;
+        const observationPoints = 20;
+        const totalEarned = quizPoints + observationPoints + currentAnimal.pointValue;
+
+        setTotalPoints(totalPoints + totalEarned);
+        setFoundAnimals(new Set([...foundAnimals, currentAnimal.id]));
+        setBadges([...badges, {
+          animal: currentAnimal.name,
+          emoji: currentAnimal.emoji,
+          points: totalEarned,
+          timestamp: new Date()
+        }]);
+
+        setCurrentScreen('badge');
+      };
+
+      const wordCount = observation.trim().split(/\s+/).filter(w => w).length;
+
+      if (currentScreen === 'home') {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 flex items-center justify-center p-4">
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-2xl p-8 text-center">
+              <img 
+                src="images/logo.png.png" 
+                alt="Taronga Zoo Logo" 
+                className="w-48 h-auto mx-auto mb-6"
+                style={{maxHeight: '150px', objectFit: 'contain'}}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+              <div className="text-7xl mb-4">🦁🐘🦒</div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-3">Taronga Zoo</h1>
+              <h2 className="text-2xl font-semibold text-emerald-600 mb-6">Animal Geocache Hunt</h2>
+              <p className="text-gray-600 mb-8 leading-relaxed">
+                Explore the zoo and discover animal locations! Learn about each animal through sounds, 
+                questions, and behavioral observations. Earn badges and points!
+              </p>
+              <div className="bg-emerald-50 rounded-xl p-4 mb-8">
+                <h3 className="font-semibold text-emerald-900 mb-2">🎯 How to Play:</h3>
+                <ul className="text-sm text-emerald-800 space-y-1 text-left">
+                  <li>📍 Enable location to find geocache spots</li>
+                  <li>🎵 Get close to animals to unlock them</li>
+                  <li>❓ Answer 3 questions about each animal</li>
+                  <li>📝 Write a 20+ word observation</li>
+                  <li>🏆 Earn badges and points!</li>
+                </ul>
+              </div>
+              <button
+                onClick={enableLocation}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg transform hover:scale-105 transition-all"
+              >
+                🌍 Start Adventure
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      if (currentScreen === 'map') {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900">
+            <div className="bg-emerald-950 bg-opacity-50 backdrop-blur-sm border-b border-emerald-700 sticky top-0 z-50">
+              <div className="max-w-7xl mx-auto px-4 py-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h1 className="text-2xl font-bold text-white">🗺️ Find Animals</h1>
+                    <p className="text-emerald-200 text-sm">Get within range to discover</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-yellow-400 font-bold text-2xl">⭐ {totalPoints}</div>
+                    <div className="text-emerald-200 text-xs">{foundAnimals.size}/{animals.length} Found</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="max-w-7xl mx-auto px-4 py-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {animals.map((animal) => {
+                  const { nearby, distance } = checkAnimalProximity(animal);
+                  const alreadyFound = foundAnimals.has(animal.id);
+
+                  return (
+                    <div
+                      key={animal.id}
+                      onClick={() => !alreadyFound && discoverAnimal(animal)}
+                      className={'bg-white rounded-xl p-6 shadow-lg cursor-pointer transition-all ' + 
+                        (alreadyFound ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105') + ' ' +
+                        (nearby && !alreadyFound ? 'ring-4 ring-green-400 animate-pulse' : '')}
+                    >
+                      <div className="text-5xl mb-3 text-center">{animal.emoji}</div>
+                      <h3 className="font-bold text-gray-900 text-center mb-2">{animal.name}</h3>
+                      {alreadyFound ? (
+                        <div className="bg-green-100 text-green-800 text-center py-2 rounded-lg font-semibold">
+                          ✓ Completed
+                        </div>
+                      ) : nearby ? (
+                        <div className="bg-green-500 text-white text-center py-2 rounded-lg font-bold animate-bounce">
+                          📍 TAP TO DISCOVER!
+                        </div>
+                      ) : distance !== null ? (
+                        <div className="bg-gray-100 text-gray-600 text-center py-2 rounded-lg text-sm">
+                          {distance}m away
+                        </div>
+                      ) : (
+                        <div className="bg-gray-100 text-gray-400 text-center py-2 rounded-lg text-sm">
+                          🔒 Locked
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (currentScreen === 'animal' && currentAnimal) {
+        const allQuestionsAnswered = currentAnimal.questions.every((_, i) => quizAnswers[i] !== undefined);
+
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 py-8 px-4">
+            <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+              <div className="relative h-64">
+                <img
+                  src={currentAnimal.image}
+                  alt={currentAnimal.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-4 right-4 bg-black bg-opacity-70 text-white px-4 py-2 rounded-full">
+                  {currentAnimal.emoji} {currentAnimal.name}
+                </div>
+              </div>
+
+              <div className="p-6">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">{currentAnimal.name}</h2>
+                <p className="text-gray-500 italic mb-6">{currentAnimal.scientificName}</p>
+
+                <div className="mb-8">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">📚 Answer These Questions:</h3>
+                  {currentAnimal.questions.map((q, qIndex) => (
+                    <div key={qIndex} className="mb-6 bg-gray-50 p-4 rounded-lg">
+                      <p className="font-semibold text-gray-800 mb-3">{qIndex + 1}. {q.q}</p>
+                      <div className="space-y-2">
+                        {q.options.map((option, oIndex) => (
+                          <button
+                            key={oIndex}
+                            onClick={() => handleQuizAnswer(qIndex, oIndex)}
+                            className={'w-full text-left p-3 rounded-lg border-2 transition-all ' +
+                              (quizAnswers[qIndex] === oIndex
+                                ? 'border-emerald-500 bg-emerald-50'
+                                : 'border-gray-200 hover:border-emerald-300')}
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mb-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">🔍 Behavioral Observation</h3>
+                  <p className="text-gray-600 mb-3">{currentAnimal.observationPrompt}</p>
+                  <textarea
+                    value={observation}
+                    onChange={(e) => setObservation(e.target.value)}
+                    placeholder="Describe what you observe... (minimum 20 words)"
+                    className="w-full h-32 p-4 border-2 border-gray-300 rounded-lg focus:border-emerald-500 focus:outline-none"
+                  />
+                  <div className="flex justify-between items-center mt-2">
+                    <span className={'text-sm ' + (wordCount >= 20 ? 'text-green-600' : 'text-red-500')}>
+                      {wordCount}/20 words {wordCount >= 20 ? '✓' : ''}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={submitObservation}
+                  disabled={!allQuestionsAnswered || wordCount < 20}
+                  className={'w-full py-4 rounded-xl font-bold text-lg ' +
+                    (allQuestionsAnswered && wordCount >= 20
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed')}
+                >
+                  {!allQuestionsAnswered ? '⚠️ Answer all questions first' : wordCount < 20 ? '⚠️ Write more observations' : '🎉 Submit & Earn Badge!'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (currentScreen === 'badge') {
+        const lastBadge = badges[badges.length - 1];
+
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-orange-400 to-pink-500 flex items-center justify-center p-4">
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-2xl p-8 text-center">
+              <div className="text-8xl mb-4 animate-bounce">{lastBadge.emoji}</div>
+              <h2 className="text-4xl font-bold text-gray-900 mb-2">Badge Earned!</h2>
+              <h3 className="text-2xl font-semibold text-emerald-600 mb-6">{lastBadge.animal}</h3>
+              
+              <div className="bg-yellow-50 rounded-xl p-6 mb-6">
+                <p className="text-5xl font-bold text-yellow-600 mb-2">+{lastBadge.points}</p>
+                <p className="text-gray-600">Points Earned</p>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                <p className="text-gray-600">Total Progress</p>
+                <p className="text-3xl font-bold text-gray-900">{foundAnimals.size}/{animals.length} Animals</p>
+                <p className="text-2xl font-bold text-emerald-600 mt-2">⭐ {totalPoints} Points</p>
+              </div>
+
+              <button
+                onClick={() => setCurrentScreen('map')}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg"
+              >
+                {foundAnimals.size === animals.length ? '🎉 Complete! View Map' : '🗺️ Find Next Animal'}
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      return null;
+    };
+
+    ReactDOM.render(<ZooSoundsApp />, document.getElementById('root'));
+  </script>
+</body>
+</html>
