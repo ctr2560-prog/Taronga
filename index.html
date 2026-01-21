@@ -261,7 +261,13 @@
         };
       };
 
-      const discoverAnimal = (animal) => {
+      const discoverAnimal = (animal, event) => {
+        // Prevent event propagation and default behavior
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+
         if (foundAnimals.has(animal.id)) {
           alert('You\'ve already found this animal! Try finding another one.');
           return;
@@ -346,18 +352,18 @@
               <div className="bg-emerald-50 rounded-xl p-4 mb-8">
                 <h3 className="font-semibold text-emerald-900 mb-2">How to Play:</h3>
                 <ul className="text-sm text-emerald-800 space-y-1 text-left">
-                  <li>Enable location to find geocache spots</li>
-                  <li>Get close to animals to unlock them</li>
-                  <li>Answer 3 questions about each animal</li>
-                  <li>Write a 10+ word observation</li>
-                  <li>Earn badges and points!</li>
+                  <li>✓ Enable location to find geocache spots</li>
+                  <li>✓ Get close to animals to unlock them</li>
+                  <li>✓ Answer 3 questions about each animal</li>
+                  <li>✓ Write a 10+ word observation</li>
+                  <li>✓ Earn badges and points!</li>
                 </ul>
               </div>
               <button
                 onClick={enableLocation}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg transform hover:scale-105 transition-all"
               >
-                Start Adventure
+                🚀 Start Adventure
               </button>
             </div>
           </div>
@@ -398,9 +404,19 @@
                   return (
                     <div
                       key={animal.id}
-                      onClick={() => !alreadyFound && discoverAnimal(animal)}
-                      className={'bg-white rounded-xl p-6 shadow-lg cursor-pointer transition-all ' + 
-                        (alreadyFound ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105') + ' ' +
+                      onTouchStart={(e) => {
+                        if (!alreadyFound) {
+                          e.preventDefault();
+                          discoverAnimal(animal, e);
+                        }
+                      }}
+                      onClick={(e) => {
+                        if (!alreadyFound) {
+                          discoverAnimal(animal, e);
+                        }
+                      }}
+                      className={'bg-white rounded-xl p-6 shadow-lg transition-all touch-manipulation ' + 
+                        (alreadyFound ? 'opacity-50' : 'hover:scale-105 active:scale-95 cursor-pointer') + ' ' +
                         (nearby && !alreadyFound ? 'ring-4 ring-green-400 animate-pulse' : '')}
                     >
                       <div className="relative w-full h-32 mb-3 rounded-lg overflow-hidden bg-gray-200">
@@ -475,10 +491,10 @@
                           <button
                             key={oIndex}
                             onClick={() => handleQuizAnswer(qIndex, oIndex)}
-                            className={'w-full text-left p-3 rounded-lg border-2 transition-all ' +
+                            className={'w-full text-left p-3 rounded-lg border-2 transition-all touch-manipulation ' +
                               (quizAnswers[qIndex] === oIndex
                                 ? 'border-emerald-500 bg-emerald-50'
-                                : 'border-gray-200 hover:border-emerald-300')}
+                                : 'border-gray-200 hover:border-emerald-300 active:bg-gray-50')}
                           >
                             {option}
                           </button>
@@ -498,7 +514,7 @@
                     className="w-full h-32 p-4 border-2 border-gray-300 rounded-lg focus:border-emerald-500 focus:outline-none"
                   />
                   <div className="flex justify-between items-center mt-2">
-                    <span className={'text-sm ' + (wordCount >= 10 ? 'text-green-600' : 'text-red-500')}>
+                    <span className={'text-sm font-semibold ' + (wordCount >= 10 ? 'text-green-600' : 'text-red-500')}>
                       {wordCount}/10 words {wordCount >= 10 ? '✓' : ''}
                     </span>
                   </div>
@@ -507,9 +523,9 @@
                 <button
                   onClick={submitObservation}
                   disabled={!allQuestionsAnswered || wordCount < 10}
-                  className={'w-full py-4 rounded-xl font-bold text-lg ' +
+                  className={'w-full py-4 rounded-xl font-bold text-lg touch-manipulation ' +
                     (allQuestionsAnswered && wordCount >= 10
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white cursor-pointer'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed')}
                 >
                   {!allQuestionsAnswered ? '⚠️ Answer all questions first' : wordCount < 10 ? '⚠️ Write more observations' : '🎉 Submit & Earn Badge!'}
@@ -543,7 +559,7 @@
 
               <button
                 onClick={() => setCurrentScreen('map')}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg touch-manipulation"
               >
                 {foundAnimals.size === animals.length ? '🎉 Complete! View Map' : '🗺️ Find Next Animal'}
               </button>
